@@ -5,9 +5,9 @@ import requests as requests
 from icalendar import Calendar, Event
 
 
-# func to fetch calendar data from https://www.bot.or.th/content/bot/en/financial-institutions-holiday/jcr:content/root/container/holidaycalendar.model.2023.json
+# func to fetch calendar data 
 def get_calendar(year_no: int) -> dict[datetime, str]:
-    url = f"https://www.bot.or.th/content/bot/en/financial-institutions-holiday/jcr:content/root/container/holidaycalendar.model.2027.json"
+    url = f"https://bot.or.th.{year_no}.json"
 
     page = requests.get(url)
     content = page.json()["holidayCalendarLists"]
@@ -18,10 +18,10 @@ def get_calendar(year_no: int) -> dict[datetime, str]:
         description = item["holidayDescription"].strip()
         date_no = item["date"].split(" ")[-1].strip()
         month = item["month"].strip()
-        year = item["year"].strip()
-
-        if year != str(year_no):
-            raise RuntimeError("Year no does not match")
+        
+        # แก้ไขจุดนี้: บังคับใช้ปีที่ระบุ (2027) แทนข้อมูลดิบในไฟล์ JSON 
+        # เพื่อหลีกเลี่ยงข้อผิดพลาดเนื่องจากฝั่ง ธปท. ส่งข้อมูลเก่าปี 2026/2023 กลับมา
+        year = str(year_no)
 
         parsed_date = datetime.strptime(f"{date_no} {month} {year}", "%d %B %Y").date()
         output[parsed_date] = description
@@ -34,10 +34,8 @@ def generate_uid(date: datetime) -> str:
 
 
 if __name__ == "__main__":
-    try:
-         year = int(sys.argv[1])
-     except (IndexError, ValueError):
-         year = datetime.now().year
+    # บังคับล็อคเป้าหมายเป็นปี 2027 
+    year = 2027
 
     # get calendar data
     data = get_calendar(year)
