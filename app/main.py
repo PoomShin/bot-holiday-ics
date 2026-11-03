@@ -1,65 +1,53 @@
-import os
 import sys
 from datetime import datetime
-import requests
 
+import requests as requests
 from icalendar import Calendar, Event
 
-def get_calendar(year_no: int) -> dict[datetime, str]:
-    url = f"https://bot.or.th.{year_no}.json"
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
 
-    try:
-        page = requests.get(url, headers=headers, timeout=15)
-        page.raise_for_status()
-        data_json = page.json()
-        content = data_json.get("holidayCalendarLists", [])
-    except Exception as e:
-        print(f"Warning: Cannot fetch data ({e}). Using fallback holidays.")
-        content = []
+# func to fetch calendar data from https://www.bot.or.th/content/bot/en/financial-institutions-holiday/jcr:content/root/container/holidaycalendar.model.2023.json
+def get_calendar(year_no: int) -> dict[datetime, str]:
+    url = f"https://www.bot.or.th/content/bot/en/financial-institutions-holiday/jcr:content/root/container/holidaycalendar.model.2027.json"
+
+    page = requests.get(url)
+    content = page.json()["holidayCalendarLists"]
 
     output = {}
 
     for item in content:
-        description = item.get("holidayDescription", "").strip()
-        date_raw = item.get("date", "")
-        if not date_raw:
-            continue
-            
-        date_no = date_raw.split(" ")[-1].strip()
-        month = item.get("month", "").strip()
-        year = str(year_no) # บังคับเป็นปีที่ส่งมา
+        description = item["holidayDescription"].strip()
+        date_no = item["date"].split(" ")[-1].strip()
+        month = item["month"].strip()
+        year = item["year"].strip()
 
-        try:
-            parsed_date = datetime.strptime(f"{date_no} {month} {year}", "%d %B %Y").date()
-            output[parsed_date] = description
-        except ValueError:
-            continue
+        if year != str(year_no):
+            raise RuntimeError("Year no does not match")
 
-    # กรณีไม่มีข้อมูลโผล่มา ให้ใส่ค่าเริ่มต้นของปี 2027 รอไว้เลย
-    if not output and year_no == 2027:
-        output[datetime(2027, 1, 1).date()] = "New Year's Day"
-        output[datetime(2027, 4, 13).date()] = "Songkran Festival"
-        output[datetime(2027, 4, 14).date()] = "Songkran Festival"
-        output[datetime(2027, 4, 15).date()] = "Songkran Festival"
-        output[datetime(2027, 12, 31).date()] = "New Year's Eve"
+        parsed_date = datetime.strptime(f"{date_no} {month} {year}", "%d %B %Y").date()
+        output[parsed_date] = description
 
     return output
+
 
 def generate_uid(date: datetime) -> str:
     return f"BOT-{date.strftime('%Y%m%d')}"
 
+
 if __name__ == "__main__":
-    year = 2027
+    try:
+         year = int(sys.argv[1])
+     except (IndexError, ValueError):
+         year = datetime.now().year
+
+    # get calendar data
     data = get_calendar(year)
 
+    # create calendar
     cal = Calendar()
     cal.add("prodid", "-//Thai Bank Holiday//NONSGML v1.0//EN")
     cal.add("version", "2.0")
 
+    # add holidays to calendar
     for date, summary in data.items():
         event = Event()
         event.add("summary", summary)
@@ -69,10 +57,6 @@ if __name__ == "__main__":
         event.add("uid", generate_uid(date))
         cal.add_component(event)
 
-    # บังคับสร้างโฟลเดอร์ docs หากไม่มี
-    os.makedirs("docs", exist_ok=True)
-
-    # บังคับเขียนไฟล์ลงไปใน docs/ โดยตรง
-    with open("docs/thai bank holidays.ics", "wb") as f:
+    # write calendar to file
+    with open("thai bank holidays.ics", "wb") as f:
         f.write(cal.to_ical())
-    print("Successfully generated calendar for 2027 in docs/ folder!")
