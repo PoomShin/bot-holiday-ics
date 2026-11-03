@@ -34,10 +34,11 @@ def generate_uid(date: datetime) -> str:
 
 
 if __name__ == "__main__":
-    try:
-        year = int(sys.argv[1])
-    except (IndexError, ValueError):
-        year = datetime.now().year
+    year = 2027
+    # try:
+    #     year = int(sys.argv[1])
+    # except (IndexError, ValueError):
+    #     year = datetime.now().year
 
     # get calendar data
     data = get_calendar(year)
