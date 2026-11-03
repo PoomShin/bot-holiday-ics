@@ -45,7 +45,8 @@ jobs:
       - name: Install dependencies
         run: poetry install -C app
       - name: Run main.py
-        run: poetry run -C app python app/main.py
+        #run: poetry run -C app python app/main.py
+        run: poetry run -C app python app/main.py $(( $(date +%Y) + 1 ))
       - name: Move .ics file
         run: mv "thai bank holidays.ics" "docs/"
       - name: Upload artifact
