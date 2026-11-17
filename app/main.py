@@ -7,7 +7,7 @@ from icalendar import Calendar, Event
 
 # func to fetch calendar data from https://www.bot.or.th/content/bot/en/financial-institutions-holiday/jcr:content/root/container/holidaycalendar.model.2023.json
 def get_calendar(year_no: int) -> dict[datetime, str]:
-    url = f"https://www.bot.or.th/content/bot/en/financial-institutions-holiday/jcr:content/root/container/holidaycalendar.model.2026.json"
+    url = f"https://www.bot.or.th/content/bot/en/financial-institutions-holiday/jcr:content/root/container/holidaycalendar.model.{year_no}.json"
 
     page = requests.get(url)
     content = page.json()["holidayCalendarLists"]
