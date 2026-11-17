@@ -50,8 +50,11 @@ jobs:
       - name: Install dependencies
         run: poetry install -C app
       - name: Run main.py
-        #run: poetry run -C app python app/main.py
-        run: poetry run -C app python app/main.py $(( $(date +%Y) + 1 ))
+        env:
+          INPUT_YEAR: ${{ inputs.year }}
+        run: |
+          YEAR=${INPUT_YEAR:-$(date +%Y)}
+          poetry run -C app python app/main.py "$YEAR"
       - name: Move .ics file
         run: mv "thai bank holidays.ics" "docs/"
       - name: Upload artifact
